@@ -9,6 +9,7 @@ import holidays
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from .download import Download
 
 try:
     from .const import (
@@ -94,15 +95,23 @@ class EGDDistribuceCoordinator(DataUpdateCoordinator):
 
     async def _fetch_hdo_data(self, session: aiohttp.ClientSession) -> list:
         """Stáhnout HDO data z API."""
-        async with session.get(API_HDO_URL) as response:
-            response.raise_for_status()
-            return await response.json()
+        return await Download.get_json(
+            hass=self.hass,
+            session=session,
+            url=API_HDO_URL,
+            file="hdo",   # uloží se do cache/hdo.json
+        )
+
 
     async def _fetch_region(self, session: aiohttp.ClientSession) -> str:
-        """Zjistit region z PSČ."""
-        async with session.get(API_REGION_URL) as response:
-            response.raise_for_status()
-            data = await response.json()
+        """Zjistit region z PSČ."""        
+        data = await Download.get_json(
+            hass=self.hass,
+            session=session,
+            url=API_REGION_URL,
+            file="region",   # uloží se do cache/region.json
+        )
+
             
         region_records = [x for x in data if x.get('PSC') == self.psc]
         if not region_records:
